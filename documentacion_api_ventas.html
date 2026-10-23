@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentación API de Ventas</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#0e1527;--text:#e8edf8;--muted:#a7b3ca;--accent:#79a8ff;--green:#65d6a5;--border:#27344e;--orange:#ffcb7a;--red:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:54px 22px 42px;background:radial-gradient(ellipse at top left,#20355f 0,transparent 60%),linear-gradient(135deg,#111a30,#0b1020);border-bottom:1px solid var(--border)}
+.wrap{max-width:1100px;margin:auto;padding:0 22px}header .eyebrow{color:var(--green);font-size:.8rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1{font-size:clamp(2rem,5vw,3.3rem);line-height:1.12;margin:.5rem 0 1rem}h2{font-size:1.55rem;margin:0 0 1rem}h3{font-size:1.05rem;margin:1.2rem 0 .5rem}p{color:var(--muted);margin:.5rem 0 1rem}main{padding:30px 0 60px}.layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:26px}.nav{position:sticky;top:18px;align-self:start;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}.nav a{display:block;color:var(--muted);text-decoration:none;padding:7px 9px;border-radius:8px;font-size:.92rem}.nav a:hover{background:#1b2944;color:var(--text)}section,.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;scroll-margin-top:20px}.card{margin:0}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}code{color:#b8d2ff;background:#0b1222;padding:.13rem .35rem;border-radius:5px;font-size:.92em}pre{overflow:auto;background:#080d19;border:1px solid #202c43;padding:17px;border-radius:10px;color:#dce7fb;font-size:.9rem;line-height:1.55}.method{display:inline-block;background:#174c3d;color:#8cf0c3;font-weight:800;font-size:.78rem;padding:4px 9px;border-radius:6px;margin-right:8px}.path{font:600 .98rem ui-monospace,monospace;overflow-wrap:anywhere}.pill{display:inline-block;border:1px solid var(--border);color:var(--muted);padding:3px 9px;border-radius:99px;font-size:.78rem}.note{border-left:3px solid var(--orange);background:#282216;padding:13px 15px;border-radius:0 8px 8px 0;color:#f3dfbd;margin:14px 0}.ok{border-left-color:var(--green);background:#10271f;color:#c4f5df}.danger{border-left-color:var(--red);background:#2a171e;color:#ffd4d4}table{border-collapse:collapse;width:100%;margin:12px 0 18px}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--border);vertical-align:top}th{color:#dbe6fa;font-size:.88rem}td{color:var(--muted);font-size:.92rem}.required{color:#ffb2b2;font-size:.78rem;font-weight:700}.muted{color:var(--muted)}footer{border-top:1px solid var(--border);padding:24px 0;color:var(--muted);font-size:.88rem}.small{font-size:.88rem}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.base{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}@media(max-width:760px){.layout{grid-template-columns:1fr}.nav{position:static}.two{grid-template-columns:1fr}section{padding:18px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="eyebrow">Referencia para desarrolladores</div>
+  <h1>API REST de Ventas</h1>
+  <p style="max-width:760px;color:#d1dcef;font-size:1.08rem">Guía para integrar clientes con el servicio de ventas construido con Node.js, Express y MySQL.</p>
+  <div class="base"><span class="pill">Versión v1</span><span class="pill">JSON</span><span class="pill">Node.js · Express · MySQL</span></div>
+</div></header>
+<main class="wrap"><div class="layout">
+<nav class="nav" aria-label="Índice de documentación">
+<strong>Contenido</strong>
+<a href="#overview">Introducción</a><a href="#base">URL base</a><a href="#request">Formato de solicitudes</a><a href="#endpoint">Registrar una venta</a><a href="#responses">Respuestas y errores</a><a href="#examples">Ejemplos de consumo</a><a href="#integration">Notas de integración</a>
+</nav>
+<div>
+<section id="overview"><h2>1. Introducción</h2>
+<p>Esta API permite que una aplicación cliente envíe datos de una venta al servidor. El backend recibe la solicitud mediante Express y ejecuta el procedimiento almacenado de MySQL <code>db_registrar_ventas</code>.</p>
+<p>La operación visible en el código registra estos datos: <code>id_producto</code>, <code>id_cliente</code>, <code>cantidad</code> y <code>fecha_venta</code>. En el fragmento compartido, el servidor responde con HTTP <code>201 Created</code> cuando la operación termina correctamente.</p>
+</section>
+<section id="base"><h2>2. URL base</h2>
+<p>El servidor está configurado para escuchar en el puerto indicado por <code>PORT</code>, o en el puerto <code>3000</code> si no se define esa variable.</p>
+<pre><code>http://localhost:3000</code></pre>
+<p>En un entorno publicado, reemplaza <code>localhost:3000</code> por el dominio y puerto del servidor.</p>
+<div class="note danger"><strong>Importante: confirma el prefijo antes de publicar esta documentación.</strong><br>En la captura de <code>server.js</code> aparecen dos montajes de <code>ventasRoutes</code> con <code>/api/v1/ventas</code>, mientras que el registro de error del controlador menciona <code>/api/v1/consolidado</code>. Express combina el prefijo de <code>app.use()</code> con la ruta declarada en <code>ventas.js</code>. Por eso, la URL exacta debe comprobarse en ese archivo.</div>
+<p>Con el montaje mostrado, si <code>ventas.js</code> declara <code>router.post('/consolidado', ...)</code>, la ruta efectiva será:</p>
+<pre><code>POST http://localhost:3000/api/v1/ventas/consolidado</code></pre>
+<p>Si la URL que realmente deseas es <code>/api/v1/consolidado</code>, revisa el montaje del router para que coincida.</p>
+</section>
+<section id="request"><h2>3. Formato de solicitudes</h2>
+<p>Envía el cuerpo de la petición como JSON y especifica la cabecera <code>Content-Type: application/json</code>.</p>
+<table><thead><tr><th>Campo</th><th>Tipo recomendado</th><th>Descripción</th><th>Requerido</th></tr></thead><tbody>
+<tr><td><code>id_producto</code></td><td>Integer</td><td>Identificador del producto vendido.</td><td><span class="required">Sí*</span></td></tr>
+<tr><td><code>id_cliente</code></td><td>Integer</td><td>Identificador del cliente que realiza la compra.</td><td><span class="required">Sí*</span></td></tr>
+<tr><td><code>cantidad</code></td><td>Integer</td><td>Número de unidades vendidas.</td><td><span class="required">Sí*</span></td></tr>
+<tr><td><code>fecha_venta</code></td><td>String (fecha)</td><td>Fecha de la venta; utiliza el formato que acepte tu base de datos, por ejemplo <code>YYYY-MM-DD</code>.</td><td><span class="required">Sí*</span></td></tr>
+</tbody></table>
+<p class="small">* El controlador mostrado comprueba que todos los campos estén presentes. Confirma en <code>ventas.js</code> las validaciones de tipos, rangos y formato de fecha.</p>
+</section>
+<section id="endpoint"><h2>4. Endpoint: registrar una venta</h2>
+<div><span class="method">POST</span><span class="path">/api/v1/ventas/consolidado</span></div>
+<p>Registra una venta ejecutando el procedimiento almacenado <code>db_registrar_ventas</code>. La ruta indicada aquí es la ruta efectiva si el router declara <code>/consolidado</code> y se mantiene el prefijo mostrado en <code>server.js</code>.</p>
+<h3>Cabeceras</h3><pre><code>Content-Type: application/json
+Accept: application/json</code></pre>
+<h3>Cuerpo de ejemplo</h3><pre><code>{
+  "id_producto": 12,
+  "id_cliente": 35,
+  "cantidad": 2,
+  "fecha_venta": "2026-10-23"
+}</code></pre>
+<h3>Respuesta de éxito — HTTP 201</h3><pre><code>{
+  "status": "success",
+  "message": "Venta registrada exitosamente",
+  "datos_registrados": {
+    "id_producto": 12,
+    "id_cliente": 35,
+    "cantidad": 2,
+    "fecha_venta": "2026-10-23"
+  }
+}</code></pre>
+<p class="small">El ejemplo refleja la estructura visible en el código; los valores son ilustrativos.</p>
+</section>
+<section id="responses"><h2>5. Respuestas y errores</h2>
+<div class="card"><span class="pill">201 · Created</span><h3>Venta registrada</h3><p>La operación se completó y la respuesta incluye los campos enviados.</p></div>
+<div class="card" style="margin-top:12px"><span class="pill">400 · Bad Request (si así lo configura el controlador)</span><h3>Datos obligatorios ausentes</h3><p>El fragmento muestra el mensaje <code>Todos los campos son obligatorios</code>. Verifica en el bloque completo cuál código HTTP se utiliza para esta validación.</p><pre><code>{
+  "message": "Todos los campos son obligatorios"
+}</code></pre></div>
+<div class="card" style="margin-top:12px"><span class="pill">500 · Internal Server Error</span><h3>Error al registrar la venta</h3><p>El código mostrado devuelve una respuesta de error cuando falla la operación con la base de datos.</p><pre><code>{
+  "error": "Internal Server Error",
+  "message": "Error al registrar la venta en la base de datos"
+}</code></pre></div>
+<div class="note">Los códigos y cuerpos de error deben contrastarse con el controlador completo antes de considerar esta sección como contrato definitivo.</div>
+</section>
+<section id="examples"><h2>6. Ejemplos de consumo</h2>
+<h3>cURL</h3><pre><code>curl -X POST "http://localhost:3000/api/v1/ventas/consolidado" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "id_producto": 12,
+    "id_cliente": 35,
+    "cantidad": 2,
+    "fecha_venta": "2026-10-23"
+  }'</code></pre>
+<h3>JavaScript con fetch</h3><pre><code>async function registrarVenta() {
+  const respuesta = await fetch(
+    "http://localhost:3000/api/v1/ventas/consolidado",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        id_producto: 12,
+        id_cliente: 35,
+        cantidad: 2,
+        fecha_venta: "2026-10-23"
+      })
+    }
+  );
+
+  const resultado = await respuesta.json();
+
+  if (!respuesta.ok) {
+    throw new Error(resultado.message || "No se pudo registrar la venta");
+  }
+
+  return resultado;
+}
+
+registrarVenta()
+  .then(console.log)
+  .catch(console.error);</code></pre>
+</section>
+<section id="integration"><h2>7. Notas de integración y configuración</h2>
+<ul>
+<li>Envía siempre JSON válido y los cuatro campos requeridos.</li>
+<li>Comprueba que los identificadores de producto y cliente existan en la base de datos.</li>
+<li>Verifica el formato de <code>fecha_venta</code> y que <code>cantidad</code> sea un entero positivo, si esa es la regla de negocio.</li>
+<li>No expongas las credenciales de MySQL del archivo <code>.env</code> al cliente. Solo el servidor debe acceder a ellas.</li>
+<li>En <code>server.js</code>, coloca <code>app.use(express.json())</code> antes de montar las rutas, para que Express pueda interpretar el cuerpo JSON antes de ejecutar el controlador.</li>
+<li>La captura muestra el montaje de <code>ventasRoutes</code> repetido. Deja una sola declaración, salvo que exista una razón concreta para montarlo dos veces.</li>
+<li>En producción, configura HTTPS, validación de entrada y una estrategia de autenticación/autorización si el servicio no debe ser público.</li>
+</ul>
+<div class="note ok"><strong>Antes de entregar al cliente:</strong> comprueba la ruta exacta en <code>ventas.js</code>, confirma el código HTTP de validación y prueba los ejemplos contra el servidor en ejecución.</div>
+</section>
+<footer>Documentación inicial generada a partir de los fragmentos de código compartidos. Debe actualizarse cuando se confirme el contenido completo de las rutas.</footer>
+</div></div></main>
+</body></html>

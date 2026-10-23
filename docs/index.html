@@ -1,0 +1,134 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Documentación para integrar la API de ventas Express.">
+  <title>API de ventas | Documentación</title>
+  <style>
+    :root { color-scheme: light; --ink:#182230; --muted:#58677a; --line:#dce3ec; --blue:#155eef; --pale:#f4f7fb; --warning:#fff4d6; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f7f9fc; color:var(--ink); font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    header { background:#102a43; color:white; padding:48px max(24px, calc((100% - 1100px)/2)); }
+    header p { color:#c6d7e8; max-width:720px; margin:8px 0 0; }
+    h1 { font-size:clamp(2rem,5vw,3.2rem); line-height:1.1; margin:0; }
+    main { max-width:1100px; margin:32px auto; padding:0 24px 64px; display:grid; grid-template-columns:220px minmax(0,1fr); gap:32px; }
+    nav { position:sticky; top:20px; align-self:start; background:white; border:1px solid var(--line); border-radius:12px; padding:16px; }
+    nav strong { display:block; margin:0 0 8px; }
+    nav a { display:block; padding:5px 0; color:var(--blue); text-decoration:none; }
+    nav a:hover { text-decoration:underline; }
+    article section { background:white; border:1px solid var(--line); border-radius:12px; padding:24px; margin-bottom:20px; }
+    h2 { margin:0 0 12px; font-size:1.5rem; }
+    h3 { margin:24px 0 8px; font-size:1.08rem; }
+    p { margin:8px 0 14px; }
+    .muted { color:var(--muted); }
+    .callout { border-left:4px solid #e3a008; background:var(--warning); padding:14px 16px; border-radius:6px; }
+    .method { display:inline-block; font:700 .85rem ui-monospace,monospace; padding:3px 8px; border-radius:5px; background:#e7f6ec; color:#146c38; margin-right:8px; }
+    code, pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+    code { background:#eef2f7; padding:2px 5px; border-radius:4px; overflow-wrap:anywhere; }
+    pre { background:#101828; color:#e6edf5; padding:16px; border-radius:8px; overflow:auto; font-size:.9rem; }
+    table { border-collapse:collapse; width:100%; margin:12px 0; }
+    th,td { text-align:left; vertical-align:top; padding:10px; border-bottom:1px solid var(--line); }
+    th { background:var(--pale); }
+    .route { overflow-wrap:anywhere; }
+    footer { color:var(--muted); text-align:center; padding:24px; }
+    @media(max-width:760px) { main { display:block; } nav { position:static; margin-bottom:20px; } article section { padding:18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>API de ventas</h1>
+  <p>Referencia para consultar ventas consolidadas y registrar ventas desde una aplicación cliente.</p>
+</header>
+<main>
+  <nav aria-label="Contenido">
+    <strong>En esta página</strong>
+    <a href="#inicio">Inicio y estado</a>
+    <a href="#configuracion">Configuración</a>
+    <a href="#consulta">Consultar ventas</a>
+    <a href="#registro">Registrar venta</a>
+    <a href="#errores">Errores</a>
+  </nav>
+  <article>
+    <section id="inicio">
+      <h2>Inicio y estado de las rutas</h2>
+      <p>El servidor Express escucha en <code>http://localhost:3000</code> por defecto. En producción, sustituye ese origen por el host publicado para la API.</p>
+      <p>El router se monta bajo <code>/api/v1/ventas</code> y las rutas también incluyen prefijos. Según el código actual, las rutas efectivas son:</p>
+      <table><thead><tr><th>Operación</th><th>Método</th><th>Ruta efectiva</th></tr></thead><tbody>
+        <tr><td>Consultar ventas consolidadas</td><td>GET</td><td class="route"><code>/api/v1/ventas/api/v1/ventas/consolidado</code></td></tr>
+        <tr><td>Registrar una venta</td><td>POST</td><td class="route"><code>/api/v1/ventas/api/v1/consolidado</code></td></tr>
+      </tbody></table>
+      <div class="callout"><strong>Advertencia para integración:</strong> el servidor registra <code>express.json()</code> después del router. Por eso el cuerpo del POST no se procesa antes de la ruta y la lectura de <code>req.body</code> puede terminar en un error <code>500</code>. La guía refleja la implementación actual; se recomienda corregir el orden del middleware antes de publicar el contrato a clientes. El POST también valida campos mediante valores truthy, por lo que rechaza <code>cantidad: 0</code>.</div>
+      <p class="muted">No hay autenticación ni CORS configurados en el código actual. El servidor tampoco define una ruta de salud.</p>
+    </section>
+    <section id="configuracion">
+      <h2>Configuración del servicio</h2>
+      <p>El servidor obtiene su configuración mediante variables de entorno:</p>
+      <table><thead><tr><th>Variable</th><th>Uso</th></tr></thead><tbody>
+        <tr><td><code>PORT</code></td><td>Puerto HTTP; opcional, por defecto <code>3000</code>.</td></tr>
+        <tr><td><code>DB_HOST</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code></td><td>Conexión del servidor a MySQL. No se envían desde la aplicación cliente.</td></tr>
+      </tbody></table>
+      <p>La base de datos debe contar con los procedimientos almacenados <code>db_ventas_tech</code> y <code>db_registrar_ventas</code>. Las consultas usan JSON como formato de respuesta. Envía <code>Accept: application/json</code>; en las solicitudes POST usa también <code>Content-Type: application/json</code>.</p>
+    </section>
+    <section id="consulta">
+      <h2>Consultar ventas consolidadas</h2>
+      <p><span class="method">GET</span><code class="route">/api/v1/ventas/api/v1/ventas/consolidado</code></p>
+      <p>Recibe ambos valores como parámetros de consulta:</p>
+      <table><thead><tr><th>Parámetro</th><th>Requerido</th><th>Descripción</th></tr></thead><tbody>
+        <tr><td><code>sucursal</code></td><td>Sí</td><td>Valor de sucursal enviado al procedimiento <code>db_ventas_tech</code>.</td></tr>
+        <tr><td><code>anio</code></td><td>Sí</td><td>Año enviado al procedimiento <code>db_ventas_tech</code>.</td></tr>
+      </tbody></table>
+      <pre><code>curl --get 'http://localhost:3000/api/v1/ventas/api/v1/ventas/consolidado' \
+  --data-urlencode 'sucursal=1' \
+  --data-urlencode 'anio=2026' \
+  --header 'Accept: application/json'</code></pre>
+      <h3>Respuesta correcta · 200</h3>
+      <p>Los campos de cada elemento los determina el procedimiento almacenado.</p>
+      <pre><code>{
+  "status": "success",
+  "total_registros": 1,
+  "data": [{}]
+}</code></pre>
+      <h3>Parámetros incompletos · 400</h3>
+      <pre><code>{ "error": "Bad Request", "message": "Debe Enviar Ambos Parametros" }</code></pre>
+    </section>
+    <section id="registro">
+      <h2>Registrar una venta</h2>
+      <p><span class="method">POST</span><code class="route">/api/v1/ventas/api/v1/consolidado</code></p>
+      <p>El controlador espera estos campos en el cuerpo JSON:</p>
+      <table><thead><tr><th>Campo</th><th>Requerido</th><th>Descripción</th></tr></thead><tbody>
+        <tr><td><code>id_producto</code></td><td>Sí</td><td>Identificador del producto, según el esquema de base de datos.</td></tr>
+        <tr><td><code>id_cliente</code></td><td>Sí</td><td>Identificador del cliente, según el esquema de base de datos.</td></tr>
+        <tr><td><code>cantidad</code></td><td>Sí</td><td>Cantidad que se registrará; el valor debe ser truthy en la validación actual.</td></tr>
+        <tr><td><code>fecha_venta</code></td><td>Sí</td><td>Fecha aceptada por el procedimiento almacenado.</td></tr>
+      </tbody></table>
+      <pre><code>curl --request POST 'http://localhost:3000/api/v1/ventas/api/v1/consolidado' \
+  --header 'Content-Type: application/json' \
+  --header 'Accept: application/json' \
+  --data '{"id_producto":10,"id_cliente":25,"cantidad":2,"fecha_venta":"2026-10-23"}'</code></pre>
+      <h3>Registro correcto · 201</h3>
+      <pre><code>{
+  "status": "success",
+  "message": "Venta registrada exitosamente",
+  "datos_registrados": {
+    "id_producto": 10,
+    "id_cliente": 25,
+    "cantidad": 2,
+    "fecha_venta": "2026-10-23"
+  }
+}</code></pre>
+    </section>
+    <section id="errores">
+      <h2>Errores y códigos HTTP</h2>
+      <table><thead><tr><th>Código</th><th>Cuándo ocurre</th><th>Respuesta</th></tr></thead><tbody>
+        <tr><td><code>400</code></td><td>Falta <code>sucursal</code> o <code>anio</code> en la consulta.</td><td><code>{"error":"Bad Request","message":"Debe Enviar Ambos Parametros"}</code></td></tr>
+        <tr><td><code>400</code></td><td>Falta algún campo esperado por el POST (si el cuerpo llega parseado).</td><td><code>{"error":"Bad request","message":"Todos los campos son obligatorios"}</code></td></tr>
+        <tr><td><code>500</code></td><td>Falla una llamada a MySQL. El POST también puede llegar aquí porque el parser JSON se registra después de las rutas.</td><td>Mensaje de error específico de la operación.</td></tr>
+      </tbody></table>
+      <p>Ante errores <code>500</code>, revisa la conexión y los procedimientos almacenados en el servidor. La API no expone detalles internos de MySQL al cliente.</p>
+    </section>
+  </article>
+</main>
+<footer>Documentación de la API de ventas · basada en la implementación actual de Express</footer>
+</body>
+</html>
